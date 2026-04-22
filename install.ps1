@@ -75,6 +75,7 @@ function New-ConfigContent {
         ""
         "[Experts]"
         "AllowLiveTrading=1"
+        "AllowDllImport=1"
         "Enabled=1"
         ""
         "[StartUp]"
@@ -188,7 +189,7 @@ $installerPath = Join-Path $env:TEMP "mt5setup.exe"
 $terminalPath = Join-Path $Mt5Dir "terminal64.exe"
 $configTarget = Join-Path $Mt5Dir "config.ini"
 $expertsDir = Join-Path $Mt5Dir "MQL5\Experts"
-$presetsDir = Join-Path $Mt5Dir "MQL5\Profiles\Presets"
+$presetsDir = Join-Path $Mt5Dir "MQL5\Presets"
 $expertFileName = Split-Path -Path $Ex5Source -Leaf
 $expertName = [System.IO.Path]::GetFileNameWithoutExtension($expertFileName)
 $expertTarget = Join-Path $expertsDir $expertFileName
@@ -198,6 +199,13 @@ $hasEnvConfig = -not [string]::IsNullOrWhiteSpace($Login) -and -not [string]::Is
 
 Write-Host "Validating source files..."
 Assert-Path -PathToCheck $Ex5Source -Description "Expert EX5"
+if ([string]::IsNullOrWhiteSpace($SetSource)) {
+    $defaultSetSource = Join-Path $PSScriptRoot "ea-inputs.set"
+    if (Test-Path -LiteralPath $defaultSetSource) {
+        $SetSource = $defaultSetSource
+        Write-Host "Auto-detected SET preset: $SetSource"
+    }
+}
 if (-not [string]::IsNullOrWhiteSpace($SetSource)) {
     Assert-Path -PathToCheck $SetSource -Description "EA preset SET"
     $setFileName = Split-Path -Path $SetSource -Leaf

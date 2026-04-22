@@ -78,4 +78,4 @@ Optional flags:
 - A preset example is included at `ea-inputs.set`.
 - Replace keys to match your EA `input` names exactly (case-sensitive).
 - Keep only parameters that exist in your EA.
-- When `-SetSource` is provided, the preset is copied to `C:\MT5\MQL5\Profiles\Presets\`.
+- When `-SetSource` is provided, the preset is copied to `C:\MT5\MQL5\Presets\`.

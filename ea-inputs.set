@@ -1,6 +1,6 @@
 ; MT5 EA input preset
 ; Keep parameter names exactly as in your EA input variables.
 
-fixLot=0.01
-MagicNumber=20263333
+fixLot=0.02
+MagicNumber=20263355
 SymbolFilter=XAUUSD
