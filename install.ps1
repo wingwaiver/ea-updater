@@ -79,6 +79,34 @@ function Get-NormalizedExitCode {
     return -1
 }
 
+function Assert-ConfigReady {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath
+    )
+
+    Assert-Path -PathToCheck $ConfigPath -Description "Config INI"
+    $configText = Get-Content -LiteralPath $ConfigPath -Raw
+
+    if ([string]::IsNullOrWhiteSpace($configText)) {
+        throw "Config INI is empty: $ConfigPath"
+    }
+
+    $missing = @()
+    foreach ($key in @("Login=", "Password=", "Server=")) {
+        if ($configText -notmatch [Regex]::Escape($key)) {
+            $missing += $key.TrimEnd("=")
+        }
+    }
+    if ($missing.Count -gt 0) {
+        throw "Config INI is missing required keys: $($missing -join ', ')"
+    }
+
+    if ($configText -match "YOUR_ACCOUNT_NUMBER|YOUR_PASSWORD|YOUR_BROKER_SERVER") {
+        throw "Config INI still contains placeholder values. Update Login/Password/Server before running."
+    }
+}
+
 $installerUrl = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 $installerPath = Join-Path $env:TEMP "mt5setup.exe"
 $terminalPath = Join-Path $Mt5Dir "terminal64.exe"
@@ -145,6 +173,7 @@ if ($setTarget -ne $null) {
 }
 
 Assert-Path -PathToCheck $configTarget -Description "Target config.ini"
+Assert-ConfigReady -ConfigPath $configTarget
 Assert-Path -PathToCheck $expertTarget -Description "Target EX5"
 if ($setTarget -ne $null) {
     Assert-Path -PathToCheck $setTarget -Description "Target SET"
@@ -152,7 +181,8 @@ if ($setTarget -ne $null) {
 
 if (-not $NoLaunch) {
     Write-Host "Starting MT5 in portable mode with config..."
-    Start-Process -FilePath $terminalPath -ArgumentList "/portable", "/config:$configTarget"
+    $launchArgs = "/portable /config:`"$configTarget`""
+    Start-Process -FilePath $terminalPath -ArgumentList $launchArgs
 }
 
 if ($setTarget -ne $null) {

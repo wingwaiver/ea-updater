@@ -8,6 +8,7 @@ MT5 installation uses unattended mode (`/auto /path`) so no installer "Next" cli
 
 - Put your EA file somewhere accessible on VPS, for example `C:\deploy\MyEA.ex5`.
 - Keep `config.ini` in this project **or** provide credentials via environment variables.
+- If you use `config.ini`, set real values for `Login`, `Password`, and `Server` (not `YOUR_...` placeholders).
 
 ## 2) Run unattended with environment variables (recommended)
 
