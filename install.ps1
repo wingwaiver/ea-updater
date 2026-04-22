@@ -94,7 +94,7 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
 
     Write-Host "Installing MT5 to $Mt5Dir ..."
     New-Item -ItemType Directory -Path $Mt5Dir -Force | Out-Null
-    $installProc = Start-Process -FilePath $installerPath -ArgumentList "/silent", "/dir=$Mt5Dir" -PassThru -Wait
+    $installProc = Start-Process -FilePath $installerPath -ArgumentList "/auto", "/path:$Mt5Dir" -PassThru -Wait -WindowStyle Hidden
     if ($installProc.ExitCode -ne 0) {
         throw "MT5 installation failed. Exit code: $($installProc.ExitCode)"
     }

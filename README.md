@@ -2,6 +2,8 @@
 
 This project deploys MT5 + your EA (`.ex5`) with one PowerShell command.
 
+MT5 installation uses unattended mode (`/auto /path`) so no installer "Next" clicks are required.
+
 ## 1) Prepare files
 
 - Put your EA file somewhere accessible on VPS, for example `C:\deploy\MyEA.ex5`.
