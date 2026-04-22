@@ -23,6 +23,12 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$SetSource,
 
+    [Parameter(Mandatory = $false)]
+    [string]$StartupSymbol = "XAUUSD",
+
+    [Parameter(Mandatory = $false)]
+    [string]$StartupPeriod = "M5",
+
     [Parameter(Mandatory = $true)]
     [string]$Ex5Source
 )
@@ -49,10 +55,18 @@ function New-ConfigContent {
         [Parameter(Mandatory = $true)]
         [string]$AccountPassword,
         [Parameter(Mandatory = $true)]
-        [string]$AccountServer
+        [string]$AccountServer,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpertName,
+        [Parameter(Mandatory = $false)]
+        [string]$PresetFileName,
+        [Parameter(Mandatory = $true)]
+        [string]$ChartSymbol,
+        [Parameter(Mandatory = $true)]
+        [string]$ChartPeriod
     )
 
-    return @(
+    $lines = @(
         "[Common]"
         "Login=$AccountLogin"
         "Password=$AccountPassword"
@@ -62,7 +76,21 @@ function New-ConfigContent {
         "[Experts]"
         "AllowLiveTrading=1"
         "Enabled=1"
-    ) -join [Environment]::NewLine
+        ""
+        "[StartUp]"
+        "Expert=$ExpertName"
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($PresetFileName)) {
+        $lines += "ExpertParameters=$PresetFileName"
+    }
+
+    $lines += @(
+        "Symbol=$ChartSymbol"
+        "Period=$ChartPeriod"
+    )
+
+    return $lines -join [Environment]::NewLine
 }
 
 function Get-NormalizedExitCode {
@@ -111,6 +139,50 @@ function Assert-ConfigReady {
     }
 }
 
+function Set-StartupConfig {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ConfigPath,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpertName,
+        [Parameter(Mandatory = $false)]
+        [string]$PresetFileName,
+        [Parameter(Mandatory = $true)]
+        [string]$ChartSymbol,
+        [Parameter(Mandatory = $true)]
+        [string]$ChartPeriod
+    )
+
+    Assert-Path -PathToCheck $ConfigPath -Description "Config INI"
+    $content = Get-Content -LiteralPath $ConfigPath -Raw
+
+    $startupLines = @(
+        "[StartUp]"
+        "Expert=$ExpertName"
+    )
+    if (-not [string]::IsNullOrWhiteSpace($PresetFileName)) {
+        $startupLines += "ExpertParameters=$PresetFileName"
+    }
+    $startupLines += @(
+        "Symbol=$ChartSymbol"
+        "Period=$ChartPeriod"
+    )
+    $startupBlock = ($startupLines -join [Environment]::NewLine) + [Environment]::NewLine
+
+    $pattern = '(?ms)^\[StartUp\]\r?\n.*?(?=^\[|\z)'
+    if ($content -match $pattern) {
+        $updated = [regex]::Replace($content, $pattern, $startupBlock)
+    } else {
+        $separator = ""
+        if (-not $content.EndsWith([Environment]::NewLine)) {
+            $separator = [Environment]::NewLine
+        }
+        $updated = $content + $separator + [Environment]::NewLine + $startupBlock
+    }
+
+    Set-Content -LiteralPath $ConfigPath -Value $updated -Encoding ascii
+}
+
 $installerUrl = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 $installerPath = Join-Path $env:TEMP "mt5setup.exe"
 $terminalPath = Join-Path $Mt5Dir "terminal64.exe"
@@ -118,15 +190,18 @@ $configTarget = Join-Path $Mt5Dir "config.ini"
 $expertsDir = Join-Path $Mt5Dir "MQL5\Experts"
 $presetsDir = Join-Path $Mt5Dir "MQL5\Profiles\Presets"
 $expertFileName = Split-Path -Path $Ex5Source -Leaf
+$expertName = [System.IO.Path]::GetFileNameWithoutExtension($expertFileName)
 $expertTarget = Join-Path $expertsDir $expertFileName
 $setTarget = $null
+$setFileName = $null
 $hasEnvConfig = -not [string]::IsNullOrWhiteSpace($Login) -and -not [string]::IsNullOrWhiteSpace($Password) -and -not [string]::IsNullOrWhiteSpace($Server)
 
 Write-Host "Validating source files..."
 Assert-Path -PathToCheck $Ex5Source -Description "Expert EX5"
 if (-not [string]::IsNullOrWhiteSpace($SetSource)) {
     Assert-Path -PathToCheck $SetSource -Description "EA preset SET"
-    $setTarget = Join-Path $presetsDir (Split-Path -Path $SetSource -Leaf)
+    $setFileName = Split-Path -Path $SetSource -Leaf
+    $setTarget = Join-Path $presetsDir $setFileName
 }
 if (-not $hasEnvConfig) {
     Assert-Path -PathToCheck $ConfigSource -Description "Config INI"
@@ -165,7 +240,7 @@ if ($setTarget -ne $null) {
 }
 if ($hasEnvConfig) {
     Write-Host "Generating config.ini from MT5_LOGIN/MT5_PASSWORD/MT5_SERVER..."
-    New-ConfigContent -AccountLogin $Login -AccountPassword $Password -AccountServer $Server | Set-Content -LiteralPath $configTarget -Encoding ascii
+    New-ConfigContent -AccountLogin $Login -AccountPassword $Password -AccountServer $Server -ExpertName $expertName -PresetFileName $setFileName -ChartSymbol $StartupSymbol -ChartPeriod $StartupPeriod | Set-Content -LiteralPath $configTarget -Encoding ascii
 } else {
     Write-Host "Using config file from $ConfigSource ..."
     Copy-Item -LiteralPath $ConfigSource -Destination $configTarget -Force
@@ -182,6 +257,7 @@ Assert-Path -PathToCheck $expertTarget -Description "Target EX5"
 if ($setTarget -ne $null) {
     Assert-Path -PathToCheck $setTarget -Description "Target SET"
 }
+Set-StartupConfig -ConfigPath $configTarget -ExpertName $expertName -PresetFileName $setFileName -ChartSymbol $StartupSymbol -ChartPeriod $StartupPeriod
 
 if (-not $NoLaunch) {
     Write-Host "Starting MT5 in portable mode with config..."
