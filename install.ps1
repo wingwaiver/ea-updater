@@ -58,6 +58,10 @@ function New-ConfigContent {
         "Password=$AccountPassword"
         "Server=$AccountServer"
         "Portable=1"
+        ""
+        "[Experts]"
+        "AllowLiveTrading=1"
+        "Enabled=1"
     ) -join [Environment]::NewLine
 }
 
