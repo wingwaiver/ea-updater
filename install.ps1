@@ -61,6 +61,24 @@ function New-ConfigContent {
     ) -join [Environment]::NewLine
 }
 
+function Get-NormalizedExitCode {
+    param(
+        [Parameter(Mandatory = $true)]
+        $RawExitCode
+    )
+
+    if ($RawExitCode -is [int]) {
+        return $RawExitCode
+    }
+
+    $rawText = [string]$RawExitCode
+    if ($rawText -match '^-?\d+') {
+        return [int]$Matches[0]
+    }
+
+    return -1
+}
+
 $installerUrl = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 $installerPath = Join-Path $env:TEMP "mt5setup.exe"
 $terminalPath = Join-Path $Mt5Dir "terminal64.exe"
@@ -94,9 +112,15 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
 
     Write-Host "Installing MT5 to $Mt5Dir ..."
     New-Item -ItemType Directory -Path $Mt5Dir -Force | Out-Null
-    $installProc = Start-Process -FilePath $installerPath -ArgumentList "/auto", "/path:$Mt5Dir" -PassThru -Wait -WindowStyle Hidden
-    if ($installProc.ExitCode -ne 0) {
-        throw "MT5 installation failed. Exit code: $($installProc.ExitCode)"
+    $installArgs = "/auto /path:`"$Mt5Dir`""
+    $installProc = Start-Process -FilePath $installerPath -ArgumentList $installArgs -PassThru -Wait -WindowStyle Hidden
+    $normalizedExitCode = Get-NormalizedExitCode -RawExitCode $installProc.ExitCode
+    if ($normalizedExitCode -ne 0) {
+        if (Test-Path -LiteralPath $terminalPath) {
+            Write-Warning "MT5 installer returned exit code $normalizedExitCode (raw: $($installProc.ExitCode)), but terminal64.exe exists. Continuing."
+        } else {
+            throw "MT5 installation failed. Exit code: $normalizedExitCode (raw: $($installProc.ExitCode))"
+        }
     }
 }
 
