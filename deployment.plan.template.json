@@ -1,0 +1,41 @@
+{
+  "defaults": {
+    "remoteWorkspace": "C:\\ea-updater",
+    "brokerCatalogPath": "brokers.json",
+    "ex5Source": "COV - Breakthrough (8 Apr).ex5",
+    "setSource": "ea-inputs.set",
+    "startupSymbol": "XAUUSD",
+    "startupPeriod": "M5"
+  },
+  "vps": [
+    {
+      "name": "vps-main",
+      "host": "203.0.113.10",
+      "port": 5985,
+      "useSsl": false,
+      "username": "Administrator",
+      "passwordEnv": "VPS_MAIN_PASSWORD",
+      "remoteWorkspace": "C:\\ea-updater",
+      "instances": [
+        {
+          "name": "vantage-1001",
+          "brokerName": "Vantage",
+          "mt5Dir": "C:\\MT5\\Vantage-1001",
+          "login": "1001",
+          "password": "ACCOUNT_PASSWORD",
+          "server": "VantageInternational-Live 1",
+          "forceInstall": false,
+          "noLaunch": false
+        },
+        {
+          "name": "puprime-2001",
+          "brokerName": "PU Prime",
+          "mt5Dir": "C:\\MT5\\PUPrime-2001",
+          "login": "2001",
+          "password": "ACCOUNT_PASSWORD",
+          "server": "PUPrime-Live 01"
+        }
+      ]
+    }
+  ]
+}

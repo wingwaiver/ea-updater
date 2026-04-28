@@ -6,6 +6,15 @@ param(
     [string]$ConfigSource = "$PSScriptRoot\config.ini",
 
     [Parameter(Mandatory = $false)]
+    [string]$BrokerName,
+
+    [Parameter(Mandatory = $false)]
+    [string]$BrokerCatalogPath = "$PSScriptRoot\brokers.json",
+
+    [Parameter(Mandatory = $false)]
+    [string]$InstallerUrl,
+
+    [Parameter(Mandatory = $false)]
     [string]$Login = $env:MT5_LOGIN,
 
     [Parameter(Mandatory = $false)]
@@ -184,7 +193,68 @@ function Set-StartupConfig {
     Set-Content -LiteralPath $ConfigPath -Value $updated -Encoding ascii
 }
 
-$installerUrl = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+function Get-IniValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$IniPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Section,
+        [Parameter(Mandatory = $true)]
+        [string]$Key
+    )
+
+    if (-not (Test-Path -LiteralPath $IniPath)) {
+        return $null
+    }
+
+    $text = Get-Content -LiteralPath $IniPath -Raw
+    $sectionPattern = "(?ms)^\[$([regex]::Escape($Section))\]\r?\n(.*?)(?=^\[|\z)"
+    $sectionMatch = [regex]::Match($text, $sectionPattern)
+    if (-not $sectionMatch.Success) {
+        return $null
+    }
+
+    $body = $sectionMatch.Groups[1].Value
+    $keyPattern = "(?m)^\s*$([regex]::Escape($Key))\s*=\s*(.+?)\s*$"
+    $keyMatch = [regex]::Match($body, $keyPattern)
+    if (-not $keyMatch.Success) {
+        return $null
+    }
+
+    return $keyMatch.Groups[1].Value.Trim()
+}
+
+function Get-BrokerInstallerUrl {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CatalogPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Broker
+    )
+
+    if (-not (Test-Path -LiteralPath $CatalogPath)) {
+        throw "Broker catalog not found: $CatalogPath"
+    }
+
+    $json = Get-Content -LiteralPath $CatalogPath -Raw | ConvertFrom-Json
+    if (-not $json.brokers) {
+        throw "Invalid broker catalog format. Missing 'brokers' object."
+    }
+
+    foreach ($prop in $json.brokers.PSObject.Properties) {
+        if ($prop.Name -ieq $Broker) {
+            if ([string]::IsNullOrWhiteSpace($prop.Value.installerUrl)) {
+                throw "Broker '$Broker' exists but has empty installerUrl in catalog."
+            }
+            return [string]$prop.Value.installerUrl
+        }
+    }
+
+    $available = ($json.brokers.PSObject.Properties.Name | Sort-Object) -join ", "
+    throw "Broker '$Broker' not found in catalog. Available: $available"
+}
+
+$defaultInstallerUrl = "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 $installerPath = Join-Path $env:TEMP "mt5setup.exe"
 $terminalPath = Join-Path $Mt5Dir "terminal64.exe"
 $configTarget = Join-Path $Mt5Dir "config.ini"
@@ -215,6 +285,30 @@ if (-not $hasEnvConfig) {
     Assert-Path -PathToCheck $ConfigSource -Description "Config INI"
 }
 
+$configBrokerName = Get-IniValue -IniPath $ConfigSource -Section "Deployment" -Key "Broker"
+$configInstallerUrl = Get-IniValue -IniPath $ConfigSource -Section "Deployment" -Key "InstallerUrl"
+
+$effectiveBrokerName = $BrokerName
+if ([string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
+    $effectiveBrokerName = $configBrokerName
+}
+
+$effectiveInstallerUrl = $InstallerUrl
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl) -and -not [string]::IsNullOrWhiteSpace($configInstallerUrl)) {
+    $effectiveInstallerUrl = $configInstallerUrl
+}
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl) -and -not [string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
+    $effectiveInstallerUrl = Get-BrokerInstallerUrl -CatalogPath $BrokerCatalogPath -Broker $effectiveBrokerName
+}
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl)) {
+    $effectiveInstallerUrl = $defaultInstallerUrl
+}
+
+if (-not [string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
+    Write-Host "Selected broker: $effectiveBrokerName"
+}
+Write-Host "Installer URL: $effectiveInstallerUrl"
+
 if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
     Write-Host "MT5 already installed at $Mt5Dir, skipping install step."
 } else {
@@ -222,7 +316,7 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
         Write-Host "ForceInstall enabled, reinstalling MT5..."
     }
     Write-Host "Downloading MT5 installer..."
-    Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+    Invoke-WebRequest -Uri $effectiveInstallerUrl -OutFile $installerPath
     Assert-Path -PathToCheck $installerPath -Description "Downloaded installer"
 
     Write-Host "Installing MT5 to $Mt5Dir ..."

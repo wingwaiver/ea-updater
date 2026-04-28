@@ -1,0 +1,19 @@
+{
+  "brokers": {
+    "Vantage": {
+      "installerUrl": "https://www.vantagemarkets.com/files/download-20180830/MT5_Windows/"
+    },
+    "PU Prime": {
+      "installerUrl": "https://download.mql5.com/cdn/web/pu.prime.ltd/mt5/puprime5setup.exe"
+    },
+    "Moneta Markets": {
+      "installerUrl": "https://download.terminal.free/cdn/web/moneta.markets.pty/mt5/monetamarkets5setup.exe"
+    },
+    "Dupoin": {
+      "installerUrl": "https://download.mql5.com/cdn/web/dupoin.markets.ltd/mt5/dupoinmarkets5setup.exe"
+    },
+    "Wetrade": {
+      "installerUrl": "https://download.mql5.com/cdn/web/wetrade.international.llc/mt5/wetrade5setup.exe"
+    }
+  }
+}
