@@ -135,6 +135,33 @@ function Enable-ModernTls {
     }
 }
 
+function Get-InstallArgCandidates {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BaseArgs
+    )
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($BaseArgs)
+
+    if ($BaseArgs -notmatch '(?i)(^|\s)/silent(\s|$)') {
+        $candidates.Add("/silent $BaseArgs")
+    }
+    if ($BaseArgs -notmatch '(?i)(^|\s)/verysilent(\s|$)') {
+        $candidates.Add("/verysilent $BaseArgs")
+    }
+
+    $dedup = [System.Collections.Generic.List[string]]::new()
+    foreach ($item in $candidates) {
+        $normalized = $item.Trim()
+        if (-not [string]::IsNullOrWhiteSpace($normalized) -and -not $dedup.Contains($normalized)) {
+            $dedup.Add($normalized)
+        }
+    }
+
+    return $dedup
+}
+
 function Assert-ConfigReady {
     param(
         [Parameter(Mandatory = $true)]
@@ -375,14 +402,27 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
 
     Write-Host "Installing MT5 to $Mt5Dir ..."
     New-Item -ItemType Directory -Path $Mt5Dir -Force | Out-Null
-    $installProc = Start-Process -FilePath $installerPath -ArgumentList $installArgs -PassThru -Wait -WindowStyle Hidden
-    $normalizedExitCode = Get-NormalizedExitCode -RawExitCode $installProc.ExitCode
-    if ($normalizedExitCode -ne 0) {
-        if (Test-Path -LiteralPath $terminalPath) {
-            Write-Warning "MT5 installer returned exit code $normalizedExitCode (raw: $($installProc.ExitCode)), but terminal64.exe exists. Continuing."
-        } else {
-            throw "MT5 installation failed. Exit code: $normalizedExitCode (raw: $($installProc.ExitCode))"
+    $installArgCandidates = Get-InstallArgCandidates -BaseArgs $installArgs
+    $lastExitRaw = $null
+    $lastExitCode = $null
+
+    foreach ($candidateArgs in $installArgCandidates) {
+        Write-Host "Running installer with args: $candidateArgs"
+        $installProc = Start-Process -FilePath $installerPath -ArgumentList $candidateArgs -PassThru -Wait -WindowStyle Hidden
+        $lastExitRaw = $installProc.ExitCode
+        $lastExitCode = Get-NormalizedExitCode -RawExitCode $lastExitRaw
+
+        if ($lastExitCode -eq 0 -and (Test-Path -LiteralPath $terminalPath)) {
+            break
         }
+        if ($lastExitCode -ne 0 -and (Test-Path -LiteralPath $terminalPath)) {
+            Write-Warning "MT5 installer returned exit code $lastExitCode (raw: $lastExitRaw), but terminal64.exe exists. Continuing."
+            break
+        }
+    }
+
+    if (-not (Test-Path -LiteralPath $terminalPath)) {
+        throw "MT5 installation failed. terminal64.exe not found after trying installer args. Last exit code: $lastExitCode (raw: $lastExitRaw)"
     }
 }
 

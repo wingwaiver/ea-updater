@@ -1,8 +1,8 @@
 {
   "brokers": {
     "Vantage": {
-      "installerUrl": "https://download.mql5.com/cdn/web/vantage.international.group.limited/mt5/vantageinternational5setup.exe",
-      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
+      "installerUrl": "https://download.mql5.com/cdn/web/vantage.global.prime.pty.ltd/mt5/vantageglobalprime5setup.exe",
+      "installerArgsTemplate": "/silent /auto /path:\"{MT5_DIR}\""
     },
     "PU Prime": {
       "installerUrl": "https://download.mql5.com/cdn/web/pu.prime.ltd/mt5/puprime5setup.exe",
