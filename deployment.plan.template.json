@@ -34,6 +34,14 @@
           "login": "2001",
           "password": "ACCOUNT_PASSWORD",
           "server": "PUPrime-Live 01"
+        },
+        {
+          "name": "Dupoin",
+          "brokerName": "Dupoin",
+          "mt5Dir": "C:\\MT5\\PUPrime-2001",
+          "login": "2001",
+          "password": "ACCOUNT_PASSWORD",
+          "server": "PUPrime-Live 01"
         }
       ]
     }
