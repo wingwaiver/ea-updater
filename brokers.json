@@ -1,7 +1,7 @@
 {
   "brokers": {
     "Vantage": {
-      "installerUrl": "https://www.vantagemarkets.com/files/download-20180830/MT5_Windows/"
+      "installerUrl": "https://download.mql5.com/cdn/web/vantage.international.group.limited/mt5/vantageinternational5setup.exe"
     },
     "PU Prime": {
       "installerUrl": "https://download.mql5.com/cdn/web/pu.prime.ltd/mt5/puprime5setup.exe"

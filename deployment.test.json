@@ -1,0 +1,66 @@
+{
+  "defaults": {
+    "brokerCatalogPath": "brokers.json",
+    "ex5Source": "COV - Breakthrough (8 Apr).ex5",
+    "setSource": "ea-inputs.set",
+    "startupSymbol": "XAUUSD",
+    "startupPeriod": "M5"
+  },
+  "vps": [
+    {
+      "name": "local-broker-smoke-test",
+      "instances": [
+        {
+          "name": "test-vantage",
+          "brokerName": "Vantage",
+          "mt5Dir": "C:\\MT5\\TEST\\Vantage",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": true,
+          "noLaunch": true
+        },
+        {
+          "name": "test-puprime",
+          "brokerName": "PU Prime",
+          "mt5Dir": "C:\\MT5\\TEST\\PUPrime",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": true,
+          "noLaunch": true
+        },
+        {
+          "name": "test-moneta",
+          "brokerName": "Moneta Markets",
+          "mt5Dir": "C:\\MT5\\TEST\\Moneta",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": true,
+          "noLaunch": true
+        },
+        {
+          "name": "test-dupoin",
+          "brokerName": "Dupoin",
+          "mt5Dir": "C:\\MT5\\TEST\\Dupoin",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": true,
+          "noLaunch": true
+        },
+        {
+          "name": "test-wetrade",
+          "brokerName": "Wetrade",
+          "mt5Dir": "C:\\MT5\\TEST\\Wetrade",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": true,
+          "noLaunch": true
+        }
+      ]
+    }
+  ]
+}
