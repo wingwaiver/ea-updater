@@ -6,6 +6,24 @@ MT5 installation uses unattended mode (`/auto /path`) so no installer "Next" cli
 
 Team docs for handover and maintenance are in `docs/README.md`.
 
+## 0) If blocked by PowerShell security policy
+
+On Windows machine where you run scripts:
+
+```powershell
+.\accept-security.ps1
+```
+
+Options:
+
+```powershell
+# Only for current shell process (temporary)
+.\accept-security.ps1 -Scope Process
+
+# Persist for current user and skip prompts
+.\accept-security.ps1 -Scope CurrentUser -Force
+```
+
 ## 1) Prepare files
 
 - Put your EA file somewhere accessible on VPS, for example `C:\deploy\MyEA.ex5`.
