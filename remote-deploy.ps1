@@ -240,6 +240,10 @@ foreach ($vps in $plan.vps) {
             if (-not [string]::IsNullOrWhiteSpace($instanceInstallerUrl)) {
                 $installParams["InstallerUrl"] = [string]$instanceInstallerUrl
             }
+            $instanceInstallerArgsTemplate = Get-ValueOrDefault -PrimaryValue $instance.installerArgsTemplate -FallbackValue $defaults.installerArgsTemplate
+            if (-not [string]::IsNullOrWhiteSpace([string]$instanceInstallerArgsTemplate)) {
+                $installParams["InstallerArgsTemplate"] = [string]$instanceInstallerArgsTemplate
+            }
 
             if ([bool](Get-ValueOrDefault -PrimaryValue $instance.forceInstall -FallbackValue $false)) {
                 $installParams["ForceInstall"] = $true

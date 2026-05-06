@@ -1,19 +1,24 @@
 {
   "brokers": {
     "Vantage": {
-      "installerUrl": "https://download.mql5.com/cdn/web/vantage.international.group.limited/mt5/vantageinternational5setup.exe"
+      "installerUrl": "https://download.mql5.com/cdn/web/vantage.international.group.limited/mt5/vantageinternational5setup.exe",
+      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
     },
     "PU Prime": {
-      "installerUrl": "https://download.mql5.com/cdn/web/pu.prime.ltd/mt5/puprime5setup.exe"
+      "installerUrl": "https://download.mql5.com/cdn/web/pu.prime.ltd/mt5/puprime5setup.exe",
+      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
     },
     "Moneta Markets": {
-      "installerUrl": "https://download.terminal.free/cdn/web/moneta.markets.pty/mt5/monetamarkets5setup.exe"
+      "installerUrl": "https://download.terminal.free/cdn/web/moneta.markets.pty/mt5/monetamarkets5setup.exe",
+      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
     },
     "Dupoin": {
-      "installerUrl": "https://download.mql5.com/cdn/web/dupoin.markets.ltd/mt5/dupoinmarkets5setup.exe"
+      "installerUrl": "https://download.mql5.com/cdn/web/dupoin.markets.ltd/mt5/dupoinmarkets5setup.exe",
+      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
     },
     "Wetrade": {
-      "installerUrl": "https://download.mql5.com/cdn/web/wetrade.international.llc/mt5/wetrade5setup.exe"
+      "installerUrl": "https://download.mql5.com/cdn/web/wetrade.international.llc/mt5/wetrade5setup.exe",
+      "installerArgsTemplate": "/auto /path:\"{MT5_DIR}\""
     }
   }
 }

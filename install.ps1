@@ -15,6 +15,9 @@ param(
     [string]$InstallerUrl,
 
     [Parameter(Mandatory = $false)]
+    [string]$InstallerArgsTemplate,
+
+    [Parameter(Mandatory = $false)]
     [string]$Login = $env:MT5_LOGIN,
 
     [Parameter(Mandatory = $false)]
@@ -235,7 +238,7 @@ function Get-IniValue {
     return $keyMatch.Groups[1].Value.Trim()
 }
 
-function Get-BrokerInstallerUrl {
+function Get-BrokerCatalogEntry {
     param(
         [Parameter(Mandatory = $true)]
         [string]$CatalogPath,
@@ -257,7 +260,10 @@ function Get-BrokerInstallerUrl {
             if ([string]::IsNullOrWhiteSpace($prop.Value.installerUrl)) {
                 throw "Broker '$Broker' exists but has empty installerUrl in catalog."
             }
-            return [string]$prop.Value.installerUrl
+            return [pscustomobject]@{
+                InstallerUrl = [string]$prop.Value.installerUrl
+                InstallerArgsTemplate = [string]$prop.Value.installerArgsTemplate
+            }
         }
     }
 
@@ -298,6 +304,7 @@ if (-not $hasEnvConfig) {
 
 $configBrokerName = Get-IniValue -IniPath $ConfigSource -Section "Deployment" -Key "Broker"
 $configInstallerUrl = Get-IniValue -IniPath $ConfigSource -Section "Deployment" -Key "InstallerUrl"
+$configInstallerArgsTemplate = Get-IniValue -IniPath $ConfigSource -Section "Deployment" -Key "InstallerArgsTemplate"
 
 $effectiveBrokerName = $BrokerName
 if ([string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
@@ -308,17 +315,34 @@ $effectiveInstallerUrl = $InstallerUrl
 if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl) -and -not [string]::IsNullOrWhiteSpace($configInstallerUrl)) {
     $effectiveInstallerUrl = $configInstallerUrl
 }
-if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl) -and -not [string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
-    $effectiveInstallerUrl = Get-BrokerInstallerUrl -CatalogPath $BrokerCatalogPath -Broker $effectiveBrokerName
+$brokerCatalogEntry = $null
+if (-not [string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
+    $brokerCatalogEntry = Get-BrokerCatalogEntry -CatalogPath $BrokerCatalogPath -Broker $effectiveBrokerName
+}
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl) -and $brokerCatalogEntry) {
+    $effectiveInstallerUrl = $brokerCatalogEntry.InstallerUrl
 }
 if ([string]::IsNullOrWhiteSpace($effectiveInstallerUrl)) {
     $effectiveInstallerUrl = $defaultInstallerUrl
 }
 
+$effectiveInstallerArgsTemplate = $InstallerArgsTemplate
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerArgsTemplate) -and -not [string]::IsNullOrWhiteSpace($configInstallerArgsTemplate)) {
+    $effectiveInstallerArgsTemplate = $configInstallerArgsTemplate
+}
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerArgsTemplate) -and $brokerCatalogEntry -and -not [string]::IsNullOrWhiteSpace($brokerCatalogEntry.InstallerArgsTemplate)) {
+    $effectiveInstallerArgsTemplate = [string]$brokerCatalogEntry.InstallerArgsTemplate
+}
+if ([string]::IsNullOrWhiteSpace($effectiveInstallerArgsTemplate)) {
+    $effectiveInstallerArgsTemplate = "/auto /path:`"{MT5_DIR}`""
+}
+$installArgs = $effectiveInstallerArgsTemplate.Replace("{MT5_DIR}", $Mt5Dir)
+
 if (-not [string]::IsNullOrWhiteSpace($effectiveBrokerName)) {
     Write-Host "Selected broker: $effectiveBrokerName"
 }
 Write-Host "Installer URL: $effectiveInstallerUrl"
+Write-Host "Installer args: $installArgs"
 
 if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
     Write-Host "MT5 already installed at $Mt5Dir, skipping install step."
@@ -351,7 +375,6 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
 
     Write-Host "Installing MT5 to $Mt5Dir ..."
     New-Item -ItemType Directory -Path $Mt5Dir -Force | Out-Null
-    $installArgs = "/auto /path:`"$Mt5Dir`""
     $installProc = Start-Process -FilePath $installerPath -ArgumentList $installArgs -PassThru -Wait -WindowStyle Hidden
     $normalizedExitCode = Get-NormalizedExitCode -RawExitCode $installProc.ExitCode
     if ($normalizedExitCode -ne 0) {
