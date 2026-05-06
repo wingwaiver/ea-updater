@@ -1,0 +1,66 @@
+{
+  "defaults": {
+    "brokerCatalogPath": "../brokers.json",
+    "ex5Source": "../COV - Breakthrough (8 Apr).ex5",
+    "setSource": "../ea-inputs.set",
+    "startupSymbol": "XAUUSD",
+    "startupPeriod": "M5"
+  },
+  "vps": [
+    {
+      "name": "local-broker-live",
+      "instances": [
+        {
+          "name": "live-vantage",
+          "brokerName": "Vantage",
+          "mt5Dir": "C:\\MT5\\LIVE\\Vantage",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": false,
+          "noLaunch": false
+        },
+        {
+          "name": "live-puprime",
+          "brokerName": "PU Prime",
+          "mt5Dir": "C:\\MT5\\LIVE\\PUPrime",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": false,
+          "noLaunch": false
+        },
+        {
+          "name": "live-moneta",
+          "brokerName": "Moneta Markets",
+          "mt5Dir": "C:\\MT5\\LIVE\\Moneta",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": false,
+          "noLaunch": false
+        },
+        {
+          "name": "live-dupoin",
+          "brokerName": "Dupoin",
+          "mt5Dir": "C:\\MT5\\LIVE\\Dupoin",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": false,
+          "noLaunch": false
+        },
+        {
+          "name": "live-wetrade",
+          "brokerName": "Wetrade",
+          "mt5Dir": "C:\\MT5\\LIVE\\Wetrade",
+          "login": "REPLACE_LOGIN",
+          "password": "REPLACE_PASSWORD",
+          "server": "REPLACE_SERVER",
+          "forceInstall": false,
+          "noLaunch": false
+        }
+      ]
+    }
+  ]
+}

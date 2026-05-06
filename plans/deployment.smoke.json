@@ -1,8 +1,8 @@
 {
   "defaults": {
-    "brokerCatalogPath": "brokers.json",
-    "ex5Source": "COV - Breakthrough (8 Apr).ex5",
-    "setSource": "ea-inputs.set",
+    "brokerCatalogPath": "../brokers.json",
+    "ex5Source": "../COV - Breakthrough (8 Apr).ex5",
+    "setSource": "../ea-inputs.set",
     "startupSymbol": "XAUUSD",
     "startupPeriod": "M5"
   },
