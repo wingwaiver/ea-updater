@@ -121,6 +121,17 @@ function Get-NormalizedExitCode {
     return -1
 }
 
+function Enable-ModernTls {
+    try {
+        $tls12 = [Net.SecurityProtocolType]::Tls12
+        if (([Net.ServicePointManager]::SecurityProtocol -band $tls12) -eq 0) {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $tls12
+        }
+    } catch {
+        Write-Warning "Could not enforce TLS 1.2: $($_.Exception.Message)"
+    }
+}
+
 function Assert-ConfigReady {
     param(
         [Parameter(Mandatory = $true)]
@@ -316,7 +327,26 @@ if ((Test-Path -LiteralPath $terminalPath) -and (-not $ForceInstall)) {
         Write-Host "ForceInstall enabled, reinstalling MT5..."
     }
     Write-Host "Downloading MT5 installer..."
-    Invoke-WebRequest -Uri $effectiveInstallerUrl -OutFile $installerPath
+    Enable-ModernTls
+    try {
+        Invoke-WebRequest -Uri $effectiveInstallerUrl -OutFile $installerPath -UseBasicParsing
+    } catch {
+        $message = [string]$_.Exception.Message
+        $statusCode = $null
+        try {
+            if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+                $statusCode = [int]$_.Exception.Response.StatusCode
+            }
+        } catch {
+            $statusCode = $null
+        }
+
+        if ($statusCode) {
+            throw "Failed to download installer (HTTP $statusCode) from '$effectiveInstallerUrl'. Error: $message"
+        }
+
+        throw "Failed to download installer from '$effectiveInstallerUrl'. Check outbound firewall/proxy/TLS and URL allowlist. Error: $message"
+    }
     Assert-Path -PathToCheck $installerPath -Description "Downloaded installer"
 
     Write-Host "Installing MT5 to $Mt5Dir ..."
