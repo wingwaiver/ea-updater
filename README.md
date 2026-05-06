@@ -96,6 +96,24 @@ Use one terminal folder per account/broker. Example:
 
 This keeps terminals isolated and avoids account/profile conflicts.
 
+## 5.2) Deploy many local instances (one machine, many brokers)
+
+Use `deploy-local.ps1` to run many instances on the same machine from a single JSON plan (same schema as `remote-deploy.ps1`).
+
+```powershell
+# Validate plan and print resolved actions
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json" -DryRun
+
+# Deploy all vps[] groups in the plan on this machine
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json"
+
+# Deploy only one group (match vps[].name)
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json" -VpsName "vps-main"
+
+# Continue processing other instances when one fails
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json" -ContinueOnError
+```
+
 ## 6) EA custom inputs (.set)
 
 - A preset example is included at `ea-inputs.set`.

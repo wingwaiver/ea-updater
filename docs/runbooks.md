@@ -27,6 +27,18 @@ $env:VPS_MAIN_PASSWORD="your_password"
 .\remote-deploy.ps1 -PlanPath ".\deployment.plan.json"
 ```
 
+## B.1) Deploy หลาย instance ใน “เครื่องเดียว” (หลาย broker)
+
+ใช้ schema plan แบบเดียวกับ remote แต่รัน `install.ps1` บนเครื่องปัจจุบันแทน (ไม่ต้อง WinRM)
+
+ตัวอย่าง:
+
+```powershell
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json" -DryRun
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json"
+.\deploy-local.ps1 -PlanPath ".\deployment.plan.json" -VpsName "vps-main"
+```
+
 ## C) Troubleshooting พื้นฐาน
 
 - **ติดตั้งแล้วเด้งถาม account**
