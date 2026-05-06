@@ -27,14 +27,16 @@ function Assert-PlanField {
 function Resolve-LocalPath {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$PathValue
+        [string]$PathValue,
+        [Parameter(Mandatory = $false)]
+        [string]$BaseDir = $PSScriptRoot
     )
 
     if ([System.IO.Path]::IsPathRooted($PathValue)) {
         return $PathValue
     }
 
-    return Join-Path $PSScriptRoot $PathValue
+    return Join-Path $BaseDir $PathValue
 }
 
 function Get-ValueOrDefault {
@@ -109,10 +111,12 @@ if (-not $plan.vps -or $plan.vps.Count -eq 0) {
 }
 
 $defaults = $plan.defaults
+$resolvedPlanPath = (Resolve-Path -LiteralPath $PlanPath).Path
+$planBaseDir = Split-Path -Parent $resolvedPlanPath
 
 $filesToCopy = [System.Collections.Generic.List[string]]::new()
 Add-FileIfExists -Bucket $filesToCopy -PathValue (Join-Path $PSScriptRoot "install.ps1")
-Add-FileIfExists -Bucket $filesToCopy -PathValue (Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json"))
+Add-FileIfExists -Bucket $filesToCopy -PathValue (Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json") -BaseDir $planBaseDir)
 
 foreach ($vps in $plan.vps) {
     Assert-PlanField -Value $vps.host -FieldName "vps.host"
@@ -124,12 +128,12 @@ foreach ($vps in $plan.vps) {
     }
 
     foreach ($instance in $vps.instances) {
-        $localEx5 = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source)
+        $localEx5 = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source) -BaseDir $planBaseDir
         Add-FileIfExists -Bucket $filesToCopy -PathValue $localEx5
 
         $setValue = Get-ValueOrDefault -PrimaryValue $instance.setSource -FallbackValue $defaults.setSource
         if (-not [string]::IsNullOrWhiteSpace($setValue)) {
-            Add-FileIfExists -Bucket $filesToCopy -PathValue (Resolve-LocalPath $setValue)
+            Add-FileIfExists -Bucket $filesToCopy -PathValue (Resolve-LocalPath -PathValue $setValue -BaseDir $planBaseDir)
         }
     }
 }
@@ -145,11 +149,11 @@ if ($DryRun) {
         Write-Host "Remote workspace: $remoteWorkspace"
         foreach ($instance in $vps.instances) {
             $instanceName = Get-ValueOrDefault -PrimaryValue $instance.name -FallbackValue "instance"
-            $resolvedEx5 = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source)
+            $resolvedEx5 = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source) -BaseDir $planBaseDir
             $resolvedSet = Get-ValueOrDefault -PrimaryValue $instance.setSource -FallbackValue $defaults.setSource
             $resolvedSetDisplay = ""
             if (-not [string]::IsNullOrWhiteSpace($resolvedSet)) {
-                $resolvedSetDisplay = Resolve-LocalPath $resolvedSet
+                $resolvedSetDisplay = Resolve-LocalPath -PathValue $resolvedSet -BaseDir $planBaseDir
             } else {
                 $resolvedSetDisplay = "<none>"
             }
@@ -195,19 +199,19 @@ foreach ($vps in $plan.vps) {
         }
 
         $remoteInstallScript = Join-Path $remoteWorkspace "install.ps1"
-        $remoteBrokerCatalogPath = Join-Path $remoteWorkspace (Split-Path -Path (Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json")) -Leaf)
+        $remoteBrokerCatalogPath = Join-Path $remoteWorkspace (Split-Path -Path (Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json") -BaseDir $planBaseDir) -Leaf)
 
         foreach ($instance in $vps.instances) {
             $instanceName = Get-ValueOrDefault -PrimaryValue $instance.name -FallbackValue "instance"
             Write-Host "Running deployment for '$instanceName' on $vpsName ..."
 
-            $localEx5 = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source)
+            $localEx5 = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source) -BaseDir $planBaseDir
             $remoteEx5 = Join-Path $remoteWorkspace (Split-Path -Path $localEx5 -Leaf)
 
             $setValue = Get-ValueOrDefault -PrimaryValue $instance.setSource -FallbackValue $defaults.setSource
             $remoteSet = $null
             if (-not [string]::IsNullOrWhiteSpace($setValue)) {
-                $localSet = Resolve-LocalPath $setValue
+                $localSet = Resolve-LocalPath -PathValue $setValue -BaseDir $planBaseDir
                 $remoteSet = Join-Path $remoteWorkspace (Split-Path -Path $localSet -Leaf)
             }
 

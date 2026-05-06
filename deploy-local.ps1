@@ -30,14 +30,16 @@ function Assert-PlanField {
 function Resolve-LocalPath {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$PathValue
+        [string]$PathValue,
+        [Parameter(Mandatory = $false)]
+        [string]$BaseDir = $PSScriptRoot
     )
 
     if ([System.IO.Path]::IsPathRooted($PathValue)) {
         return $PathValue
     }
 
-    return Join-Path $PSScriptRoot $PathValue
+    return Join-Path $BaseDir $PathValue
 }
 
 function Get-ValueOrDefault {
@@ -115,7 +117,9 @@ if (-not (Test-Path -LiteralPath $installScript)) {
 
 $plan = Get-Content -LiteralPath $PlanPath -Raw | ConvertFrom-Json
 $defaults = $plan.defaults
-$brokerCatalogPath = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json")
+$resolvedPlanPath = (Resolve-Path -LiteralPath $PlanPath).Path
+$planBaseDir = Split-Path -Parent $resolvedPlanPath
+$brokerCatalogPath = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $defaults.brokerCatalogPath -FallbackValue "brokers.json") -BaseDir $planBaseDir
 Assert-FileExists -PathValue $brokerCatalogPath -FieldName "defaults.brokerCatalogPath"
 
 $selectedVpsEntries = Select-VpsEntries -Plan $plan -NameFilter $VpsName
@@ -134,11 +138,11 @@ if ($DryRun) {
         Write-Host "---- $vpsResolvedName (local) ----"
         foreach ($instance in $vps.instances) {
             $instanceName = [string](Get-ValueOrDefault -PrimaryValue $instance.name -FallbackValue "instance")
-            $resolvedEx5 = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source)
+            $resolvedEx5 = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source) -BaseDir $planBaseDir
             $resolvedSet = Get-ValueOrDefault -PrimaryValue $instance.setSource -FallbackValue $defaults.setSource
             $resolvedSetDisplay = "<none>"
             if (-not [string]::IsNullOrWhiteSpace([string]$resolvedSet)) {
-                $resolvedSetDisplay = Resolve-LocalPath ([string]$resolvedSet)
+                $resolvedSetDisplay = Resolve-LocalPath -PathValue ([string]$resolvedSet) -BaseDir $planBaseDir
             }
 
             $resolvedBroker = [string](Get-ValueOrDefault -PrimaryValue $instance.brokerName -FallbackValue $defaults.brokerName)
@@ -164,14 +168,14 @@ foreach ($vps in $selectedVpsEntries) {
         $instanceName = [string](Get-ValueOrDefault -PrimaryValue $instance.name -FallbackValue "instance")
         Write-Host "Running deployment for '$instanceName' ..."
 
-        $resolvedEx5 = Resolve-LocalPath (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source)
+        $resolvedEx5 = Resolve-LocalPath -PathValue (Get-ValueOrDefault -PrimaryValue $instance.ex5Source -FallbackValue $defaults.ex5Source) -BaseDir $planBaseDir
         Assert-PlanField -Value $resolvedEx5 -FieldName "instances.ex5Source"
         Assert-FileExists -PathValue $resolvedEx5 -FieldName "instances.ex5Source"
 
         $setValue = Get-ValueOrDefault -PrimaryValue $instance.setSource -FallbackValue $defaults.setSource
         $resolvedSet = $null
         if (-not [string]::IsNullOrWhiteSpace([string]$setValue)) {
-            $resolvedSet = Resolve-LocalPath ([string]$setValue)
+            $resolvedSet = Resolve-LocalPath -PathValue ([string]$setValue) -BaseDir $planBaseDir
             Assert-FileExists -PathValue $resolvedSet -FieldName "instances.setSource"
         }
 
